@@ -79,3 +79,9 @@ part2 = do
     return $ foldl reducer 0 instructions
         where reducer acc (theirs:outcome:_) = acc + roundScore (ourAction theirs outcome) theirs
               reducer acc _ = acc
+
+main = do
+    part1 <- part1
+    putStrLn $ "Part 1: " ++ show part1
+    part2 <- part2
+    putStrLn $ "Part 2: " ++ show part2

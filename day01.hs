@@ -38,3 +38,9 @@ part2 = do
     let lst3 = removeItem elf2 lst2
     let elf3 = maximum lst3
     return (elf1 + elf2 + elf3)
+
+main = do
+    part1 <- part1
+    putStrLn $ "Part 1: " ++ show part1
+    part2 <- part2
+    putStrLn $ "Part 2: " ++ show part2
