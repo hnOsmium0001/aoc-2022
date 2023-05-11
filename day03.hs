@@ -29,13 +29,30 @@ parseRunsack ln = T.splitAt (div (T.length ln) 2) ln
 
 part1 = do
     runsacks <- fmap (map parseRunsack . T.lines) (T.readFile "inputs/day03.txt")
-    let duplicateItems = map (uncurry findDuplicateChar) runsacks
-        priorities = map (itemPriority . head) duplicateItems
+    let duplicateItems = map (head . uncurry findDuplicateChar) runsacks
+        priorities = map itemPriority duplicateItems
     return $ sum priorities
 
--- TODO
+-- Or an unholy long line of function compositions, if you like it that way
+part1PointFree = fmap (sum . map (itemPriority . head . uncurry findDuplicateChar . parseRunsack) . T.lines) (T.readFile "inputs/day03.txt")
+
+findBadgeItemRunsacks runsack1 runsack2 runsack3 =
+    findDuplicateChar (T.pack (findDuplicateChar runsack1 runsack2)) runsack3
+
+findBadgeItemGroup [x,y,z] = findBadgeItemRunsacks x y z
+
+splitEvery _ [] = []
+splitEvery n xs = first : (splitEvery n rest)
+    where (first, rest) = splitAt n xs
+
 part2 = do
-    return 0
+    file <- T.readFile "inputs/day03.txt"
+    let -- We don't care about compartments in part 2, just things carried by each elf
+        runsacks = T.lines file
+        groups = splitEvery 3 runsacks
+        groupBadges = map findBadgeItemGroup groups
+        groupPriorities = map (itemPriority . head) groupBadges
+    return $ sum groupPriorities
 
 main = do
     part1 <- part1
