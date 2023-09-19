@@ -27,50 +27,26 @@ void unique_of_4(const char buf[4], bool& is_unique, size_t& advance) {
 }
 
 void unique_of_n(const char* buf, size_t buf_size, bool& is_unique, size_t& advance) {
-    uint32_t mask = 0;
-    for (size_t i = 0; i < buf_size; ++i) {
-        uint32_t prev = mask;
-        mask |= 1u << (buf[i] - 'a');
-        uint32_t post = mask;
+    constexpr size_t LETTER_CNT = 26;
+    constexpr size_t INVALID_LETTER_OCC = std::numeric_limits<size_t>::max();
+    size_t letter_occurrences[LETTER_CNT];
+    for (size_t i = 0; i < LETTER_CNT; ++i) {
+        letter_occurrences[i] = INVALID_LETTER_OCC;
+    }
 
-        if (prev == post) {
+    for (size_t i = 0; i < buf_size; ++i) {
+        auto& the_letter = letter_occurrences[buf[i] - 'a'];
+        if (the_letter == INVALID_LETTER_OCC) {
+            the_letter = i;
+        } else {
             is_unique = false;
-            advance = 1;
+            advance = the_letter + 1;
             return;
         }
     }
 
     is_unique = true;
     advance = 0;
-}
-
-// == <size_t>::max()   Valid result: begin index of the first unique range
-// otherwise            No unique window found
-size_t find_unique_window(const char* buf, size_t buf_size, size_t window_size) {
-    assert(window_size <= buf_size);
-
-    bool occurence_cnt[26];
-	size_t curr_window_size = 0;
-
-    for (size_t i = 0; i < buf_size; ++i) {
-        auto& the_letter = occurence_cnt[buf[i] - 'a'];
-        bool is_duplicate = the_letter >= 1;
-        the_letter += 1;
-
-        if (is_duplicate) {
-            // We shift the window forward by one
-            occurence_cnt[buf[i - curr_window_size] - 'a'] -= 1; // Remove first char in the currnt [beg,end)
-        } else {
-            the_letter += 1;
-            curr_window_size += 1;
-
-            if (curr_window_size == window_size) {
-                return i - curr_window_size;
-            }
-        }
-    }
-
-    return std::numeric_limits<size_t>::max();
 }
 
 void solve(const std::string& input, size_t window_size) {
@@ -96,7 +72,4 @@ int main() {
 
     solve(input, 4);
     solve(input, 14);
-
-    //size_t res = find_unique_window(input.data(), input.size(), 4);
-    //std::cout << "Offset of datagram: " << res << '\n';
 }
