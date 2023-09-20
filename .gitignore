@@ -1,2 +1,5 @@
 # Recommended to not publish your own input data
 inputs/
+
+a.out
+build/
