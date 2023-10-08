@@ -38,11 +38,12 @@ parseInstructions =
         )
   . T.lines
 
-operateElements list n m func
-  | n < m = operate list n m func
-  | n > m = operate list m n (\a b -> swap (func b a))
+operateElements :: (a -> a -> (a, a)) -> Int -> Int -> [a] -> [a]
+operateElements func n m list
+  | n < m = operate func n m list
+  | n > m = operate (\a b -> swap (func b a)) m n list
   | n == m = error "Cannot operate on the same element"
-  where operate list n m func =
+  where operate func n m list =
           let (front, rest) = splitAt n list
               (middle, rest') = splitAt (m - n - 1) (tail rest)
               back = tail rest'
@@ -53,30 +54,30 @@ insSrc (_,x,_) = x
 insDst (_,_,x) = x
 insCount (x,_,_) = x
 
-applyIns :: [[Char]] -> (Int, Int, Int) -> [[Char]]
-applyIns stacks ins = operateElements stacks isrc idst handler
+applyIns :: ([Char] -> [Char]) -> [[Char]] -> (Int, Int, Int) -> [[Char]]
+applyIns craneLifter stacks ins = operateElements handler isrc idst stacks
   where count = insCount ins
         -- Instruction indices are 1-indexed, convert to 0-index for operation on lists
         isrc = insSrc ins - 1
         idst = insDst ins - 1
         handler fromPile toPile = (fromPile', toPile')
           where fromPile' = drop count fromPile
-                toPile' = (reverse $ take count fromPile) ++ toPile
+                toPile' = (craneLifter $ take count fromPile) ++ toPile
 
-applyInsList stacks insList = foldl applyIns stacks insList
+app (f1,f2) (v1,v2) = (f1 v1, f2 v2)
 
-app (v1,v2) (f1,f2) = (f1 v1, f2 v2)
-
+preprocessInput :: T.Text -> (T.Text, T.Text)
 preprocessInput inp = (crateStacks, instructions)
   where [p1, p2] = T.splitOn (T.pack "\n\n") inp
         crateStacks = (T.stripEnd . fst . T.breakOnEnd (T.pack "\n")) p1
         instructions = p2
 
+extractTopCrates :: [[Char]] -> [Char]
 extractTopCrates = map head
 
-part1 inp = extractTopCrates $ uncurry applyInsList $ app (preprocessInput inp) (parseCrateStacks, parseInstructions)
+part1 = extractTopCrates . uncurry (foldl $ applyIns reverse) . app (parseCrateStacks, parseInstructions) . preprocessInput
 
-part2 inp = 0
+part2 = extractTopCrates . uncurry (foldl $ applyIns id) . app (parseCrateStacks, parseInstructions) . preprocessInput
 
 parts filePath = do
     inp <- T.readFile filePath
