@@ -1,26 +1,46 @@
 import Data.Char
+import Data.List
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import qualified Data.Vector.Unboxed as VU
 
 app2 (f1,f2) (v1,v2) = (f1 v1, f2 v2)
 
-parseForestDim :: T.Text -> (Int, Int)
-parseForestDim s = (length lines, T.length (head lines))
-  where lines = T.lines s
+parseForest :: T.Text -> [[Int]]
+parseForest = map (unfoldr (\s -> app2 (digitToInt, id) <$> T.uncons s)) . T.lines
 
-parseForest :: T.Text -> VU.Vector Int
-parseForest = VU.unfoldr f
-  where f str = T.uncons str >>= h
-        h (c, rest) = if isDigit c
-                      then Just (digitToInt c, rest)
-                      -- Keep iterating until we find the next digit (or exhausted input and give Nothing)
-                      else f rest
+group2 a = zipWith const (init a) (tail a)
 
-generate2D width height f = VU.generate (width * height) (\i -> f (i `rem` width) (i `quot` width))
+visibilityLeft :: [[Int]] -> [[Bool]]
+visibilityLeft = map $ (snd . mapAccumL f (-1))
+  where f acc tree = (max acc tree, tree > acc)
 
-part1 inp = 0
+visibilityRight :: [[Int]] -> [[Bool]]
+visibilityRight = map reverse . visibilityLeft . map reverse
 
+visibilityTop :: [[Int]] -> [[Bool]]
+visibilityTop = transpose . visibilityLeft . transpose
+
+visibilityBottom :: [[Int]] -> [[Bool]]
+visibilityBottom = transpose . map reverse . visibilityLeft . map reverse . transpose
+
+-- i.e. foldl but over function arguments
+chain4 :: (a -> a -> a) -> a -> a -> a -> a -> a
+chain4 f a b c d = f a (f b (f c d))
+
+visibilityAll forest = zipWith4 (zipWith4 f) l r t b
+  where l = visibilityLeft forest
+        r = visibilityRight forest
+        t = visibilityTop forest
+        b = visibilityBottom forest
+        f = chain4 (||)
+
+count pred = length . filter pred
+countValue v = count (== v)
+
+part1 :: T.Text -> Int
+part1 = sum . map (countValue True) . visibilityAll . parseForest
+
+part2 :: T.Text -> Int
 part2 inp = 0
 
 parts filePath = do
